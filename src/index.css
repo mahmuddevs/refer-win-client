@@ -4,7 +4,7 @@
 @tailwind utilities;
 
 .banner {
-    background: url("/public/banner.jpg");
+    background: url("/banner.jpg");
     background-blend-mode: overlay;
     background-size: cover;
     background-repeat: no-repeat;

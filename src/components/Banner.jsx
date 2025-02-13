@@ -3,6 +3,7 @@ import Modal from "./Modal";
 
 const Banner = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
+
     return (
         <section className="banner min-h-screen">
             <div>

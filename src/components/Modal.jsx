@@ -1,33 +1,78 @@
 import { useState } from "react";
+import axios from 'axios'
+import Swal from 'sweetalert2'
 
 const Modal = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
 
-    const [email, setEmail] = useState("");
-    const [course, setCourse] = useState("");
+    const [formData, setFormData] = useState({
+        referrerName: "",
+        referrerEmail: "",
+        refereeName: "",
+        refereeEmail: "",
+        courseLink: ""
+    });
+
     const [errors, setErrors] = useState({});
 
-    const handleSubmit = (e) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const reset = () => {
-            setEmail("");
-            setCourse("");
-            setErrors({});
-            onClose();
-        }
 
         let newErrors = {};
-        if (!email.trim()) newErrors.email = "Email is required";
-        if (!course.trim()) newErrors.course = "Course name is required";
+        if (!formData.referrerName.trim()) newErrors.referrerName = "Your name is required";
+        if (!formData.referrerEmail.trim()) {
+            newErrors.referrerEmail = "Your email is required";
+        } else if (!emailRegex.test(formData.referrerEmail)) {
+            newErrors.referrerEmail = "Enter a valid email address";
+        }
+
+        if (!formData.refereeName.trim()) newErrors.refereeName = "Referee name is required";
+        if (!formData.refereeEmail.trim()) {
+            newErrors.refereeEmail = "Referee email is required";
+        } else if (!emailRegex.test(formData.refereeEmail)) {
+            newErrors.refereeEmail = "Enter a valid email address";
+        }
+
+        if (!formData.courseLink.trim()) newErrors.courseLink = "Course link is required";
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             return;
         }
 
+        const result = await axios.post("http://localhost:3000/add-referal", formData)
 
-
-        reset()
+        if (result?.data?.success) {
+            Swal.fire({
+                position: "center",
+                icon: "success",
+                title: "Referal Sent Sucessfully",
+                showConfirmButton: false,
+                timer: 1500
+            });
+            setFormData({
+                referrerName: "",
+                referrerEmail: "",
+                refereeName: "",
+                refereeEmail: "",
+                courseLink: ""
+            });
+            setErrors({});
+            onClose();
+        } else {
+            Swal.fire({
+                position: "center",
+                icon: "error",
+                title: "Something Went Wrong",
+                showConfirmButton: false,
+                timer: 1500
+            });
+        }
 
     };
 
@@ -37,29 +82,26 @@ const Modal = ({ isOpen, onClose }) => {
                 <h2 className="text-xl font-semibold mb-4">Send Referral to a Friend</h2>
 
                 <form className="space-y-4" onSubmit={handleSubmit}>
-                    <div>
-                        <label className="block text-gray-700 font-medium mb-1">Email</label>
-                        <input
-                            type="email"
-                            placeholder="Enter your friend's email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-                    </div>
-
-                    <div>
-                        <label className="block text-gray-700 font-medium mb-1">Course Name</label>
-                        <input
-                            type="text"
-                            placeholder="Enter course name"
-                            value={course}
-                            onChange={(e) => setCourse(e.target.value)}
-                            className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        {errors.course && <p className="text-red-500 text-sm mt-1">{errors.course}</p>}
-                    </div>
+                    {[
+                        { label: "Your Name", name: "referrerName", type: "text" },
+                        { label: "Your Email", name: "referrerEmail", type: "email" },
+                        { label: "Referee Name", name: "refereeName", type: "text" },
+                        { label: "Referee Email", name: "refereeEmail", type: "email" },
+                        { label: "Course Link", name: "courseLink", type: "url" }
+                    ].map(({ label, name, type }) => (
+                        <div key={name}>
+                            <label className="block text-gray-700 font-medium mb-1">{label}</label>
+                            <input
+                                type={type}
+                                name={name}
+                                placeholder={`Enter ${label.toLowerCase()}`}
+                                value={formData[name]}
+                                onChange={handleChange}
+                                className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            {errors[name] && <p className="text-red-500 text-sm mt-1">{errors[name]}</p>}
+                        </div>
+                    ))}
 
                     <button
                         type="submit"
